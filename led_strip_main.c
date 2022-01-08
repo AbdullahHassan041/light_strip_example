@@ -18,16 +18,17 @@
 #include "esp_log.h"
 #include "driver/rmt.h"
 #include "led_strip.h"
-int bytes[3];
+int bytes[4];
 static const char *TAG = "example";
 #define CONFIG_EXAMPLE_RMT_TX_GPIO 18
-#define CONFIG_EXAMPLE_STRIP_LED_NUMBER 24
+#define CONFIG_EXAMPLE_STRIP_LED_NUMBER 100
 
 #define RMT_TX_CHANNEL RMT_CHANNEL_0
 
 #define EXAMPLE_CHASE_SPEED_MS (10)
 static int start_rgb;
 void draw_pixel(int j,int  red,int green, int blue);
+void write(int time);
 /*
  * @brief Simple helper function, converting HSV color space to RGB color space
  *
@@ -53,15 +54,15 @@ int  led_strip_hsv2rgb(uint32_t hue, uint32_t saturation, uint32_t value)
     // RGB adjustment amount by hue
     uint32_t rgb_adj = (rgb_max - rgb_min) * diff / 60;*/
    
-    int r = 0;
-    int g = 0;
-    int b = 0;
-    int i = floor(hue * 6);
-    int f = hue * 6 - i;
-    int p = value * (1 - saturation);
-    int q = value * (1 - f * saturation);
-    int t = value * (1 - (1 - f) * saturation);    
-    int index = i % 6;
+    uint32_t r = 0;
+    uint32_t g = 0;
+    uint32_t b = 0;
+   uint32_t i = floor(hue * 6);
+   uint32_t f = hue * 6 - i;
+    uint32_t p = value * (1 - saturation);
+    uint32_t q = value * (1 - f * saturation);
+    uint32_t t = value * (1 - (1 - f) * saturation);    
+    uint32_t index = i % 6;
     switch (index) {
     case 0:
         r = value;
@@ -94,14 +95,11 @@ int  led_strip_hsv2rgb(uint32_t hue, uint32_t saturation, uint32_t value)
         b = q;
         break;
     }
-    int redd = r * 255;
-    int greenn = g * 255;
-    int bluee = b * 255;
-    bytes[0] = redd;
-    bytes[1] = greenn;
-    bytes[2] = bluee;
-   // bytes[3]= index;
-   for(int i=0;i<3;i++)
+    bytes[0] = r*255;
+    bytes[1] = g*255;
+    bytes[2] = b*255;
+    bytes[3]= index;
+   for(int i=0;i<4;i++)
     {
       printf("%d \n",bytes[i]);
     }
@@ -135,10 +133,29 @@ STATIC void initialize()
 
 }
 
+
+void write(int time)
+{
+  //  uint32_t time = mp_obj_get_int(a_obj);
+  ESP_ERROR_CHECK(strip->refresh(strip, time));
+}
+
 void draw_pixel( int j,int  red,int green, int blue)
 {
-  //ESP_ERROR_CHECK(strip->set_pixel(strip, j, red, green, blue));
-  strip->set_pixel(strip, j, red, green, blue);
+  ESP_ERROR_CHECK(strip->set_pixel(strip, j, red, green, blue));
+}
+
+void write_val(mp_obj_t a_obj)
+{
+  int time = mp_obj_get_int(a_obj);
+  //  uint32_t time = mp_obj_get_int(a_obj);
+  ESP_ERROR_CHECK(strip->refresh(strip, time));
+}
+
+void clear_buf(mp_obj_t a_obj)
+{
+  int timee = mp_obj_get_int(a_obj);
+  strip->clear(strip, timee);
 }
 
 STATIC void get_color_HSV(mp_obj_t a_obj,mp_obj_t b_obj,mp_obj_t c_obj)
@@ -152,46 +169,44 @@ STATIC void get_color_HSV(mp_obj_t a_obj,mp_obj_t b_obj,mp_obj_t c_obj)
     printf("hey i am in  get color!\n");
   //  while (true) {
         //for (int i = 0; i < 3; i++) {
-           // for (int j = i; j < 200; j += 3) {
+           // for (int j = i; i < 10000; j += 3) {
                 // Build RGB values
                 //hue = j * 360 / 200 + start_rgb;
                
-                int *ptr =  led_strip_hsv2rgb(hue, saturation, value);
-                int red = ptr[0];
-                int green = ptr[1];
-                int blue = ptr[2];
-               // uint32_t index = ptr[3];
-                for(int i=0;i<3;i++)
+               int *ptr =  led_strip_hsv2rgb(hue, saturation, value);
+                uint32_t red = ptr[0];
+                uint32_t green = ptr[1] ;
+                uint32_t blue = ptr[2] ;
+               int  j = ptr[3];
+                for(int i=0;i<4;i++)
                 {
                   printf("%d \n",ptr[i]);
                 }
-             //led_strip_hsv2rgb(hue, saturation, value, &red, &green, &blue);
-             
-               // draw_pixel( j, red, green, blue);
+                //draw_pixel( ind, red, green, blue);
+                draw_pixel( 5, red, green, blue);
+               // int time =90;
+               // write_val(time);
                //ESP_ERROR_CHECK(strip->set_pixel(strip, j, red, green, blue));
             //}
             // Flush RGB values to LEDs
-          //  ESP_ERROR_CHECK(strip->refresh(strip, 100));
-            //vTaskDelay(pdMS_TO_TICKS(EXAMPLE_CHASE_SPEED_MS));
-            //strip->clear(strip, 50);
-            //vTaskDelay(pdMS_TO_TICKS(EXAMPLE_CHASE_SPEED_MS));
+           
+           //ESP_ERROR_CHECK(strip->refresh(strip, 100));
+           // vTaskDelay(pdMS_TO_TICKS(EXAMPLE_CHASE_SPEED_MS));
+           // strip->clear(strip, 50);
+           // vTaskDelay(pdMS_TO_TICKS(EXAMPLE_CHASE_SPEED_MS));
        // }
        // start_rgb += 60;
   //  }
 }
-/*
-STATIC void get_color(mp_obj_t a_obj,mp_obj_t b_obj,mp_obj_t c_obj)
-{
 
-}*/
 
 
 
 
 MP_DEFINE_CONST_FUN_OBJ_0(initialize_obj,  initialize);
 MP_DEFINE_CONST_FUN_OBJ_3(get_color_HSV_obj,  get_color_HSV);
-//MP_DEFINE_CONST_FUN_OBJ_0(draw_pixel_obj,  write);
-//MP_DEFINE_CONST_FUN_OBJ_0(light_strip_obj,  light_strip);
+MP_DEFINE_CONST_FUN_OBJ_1(write_val_obj,  write_val);
+MP_DEFINE_CONST_FUN_OBJ_1(clear_buf_obj,  clear_buf);
 
 STATIC const mp_rom_map_elem_t led_strip_main_module_globals_table [] =
 {
@@ -199,8 +214,8 @@ STATIC const mp_rom_map_elem_t led_strip_main_module_globals_table [] =
  { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_led_strip_main) },
  { MP_ROM_QSTR(MP_QSTR_initialize),  MP_ROM_PTR(& initialize_obj) },
  { MP_ROM_QSTR(MP_QSTR_get_color_HSV),  MP_ROM_PTR(& get_color_HSV_obj) },
- //{ MP_ROM_QSTR(MP_QSTR_draw_pixel),  MP_ROM_PTR(& draw_pixel_obj) },
-
+ { MP_ROM_QSTR(MP_QSTR_write_val),  MP_ROM_PTR(& write_val_obj) },
+ { MP_ROM_QSTR(MP_QSTR_clear_buf),  MP_ROM_PTR(& clear_buf_obj) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(led_strip_main_module_globals,led_strip_main_module_globals_table);
