@@ -18,7 +18,7 @@
 #include "esp_log.h"
 #include "driver/rmt.h"
 #include "led_strip.h"
-
+int bytes[3];
 static const char *TAG = "example";
 #define CONFIG_EXAMPLE_RMT_TX_GPIO 18
 #define CONFIG_EXAMPLE_STRIP_LED_NUMBER 24
@@ -52,7 +52,7 @@ int  led_strip_hsv2rgb(uint32_t hue, uint32_t saturation, uint32_t value)
 
     // RGB adjustment amount by hue
     uint32_t rgb_adj = (rgb_max - rgb_min) * diff / 60;*/
-    int bytes[3];
+   
     int r = 0;
     int g = 0;
     int b = 0;
@@ -155,11 +155,11 @@ STATIC void get_color_HSV(mp_obj_t a_obj,mp_obj_t b_obj,mp_obj_t c_obj)
            // for (int j = i; j < 200; j += 3) {
                 // Build RGB values
                 //hue = j * 360 / 200 + start_rgb;
-                uint32_t *ptr;
-                ptr =  led_strip_hsv2rgb(hue, saturation, value);
-                uint32_t red = ptr[0];
-                uint32_t green = ptr[1];
-                uint32_t blue = ptr[2];
+               
+                int *ptr =  led_strip_hsv2rgb(hue, saturation, value);
+                int red = ptr[0];
+                int green = ptr[1];
+                int blue = ptr[2];
                // uint32_t index = ptr[3];
                 for(int i=0;i<3;i++)
                 {
